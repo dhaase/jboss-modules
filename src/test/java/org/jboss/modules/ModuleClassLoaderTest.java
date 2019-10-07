@@ -20,6 +20,7 @@ package org.jboss.modules;
 
 import org.jboss.modules.filter.MultiplePathFilterBuilder;
 import org.jboss.modules.filter.PathFilters;
+import org.jboss.modules.security.ModularProtectionDomain;
 import org.jboss.modules.test.ImportedClass;
 import org.jboss.modules.test.ImportedInterface;
 import org.jboss.modules.test.TestClass;
@@ -29,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URL;
+import java.security.ProtectionDomain;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -47,6 +49,8 @@ import static org.junit.Assert.fail;
  */
 public class ModuleClassLoaderTest extends AbstractModuleTestCase {
 
+    private static final String MODULES_DYNAMIC_SECURITY_PROPERTY = "jboss.modules.dynamic.security";
+
     private static final ModuleIdentifier MODULE_WITH_CONTENT_ID = ModuleIdentifier.fromString("test-with-content");
     private static final ModuleIdentifier MODULE_WITH_RESOURCE_ID = ModuleIdentifier.fromString("test-with-resource");
     private static final ModuleIdentifier MODULE_TO_IMPORT_ID = ModuleIdentifier.fromString("test-to-import");
@@ -64,6 +68,7 @@ public class ModuleClassLoaderTest extends AbstractModuleTestCase {
         moduleLoader = new TestModuleLoader();
 
         final ModuleSpec.Builder moduleWithContentBuilder = ModuleSpec.build(MODULE_WITH_CONTENT_ID);
+        moduleWithContentBuilder.addProperty(MODULES_DYNAMIC_SECURITY_PROPERTY, "true");
         moduleWithContentBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(
                 TestResourceLoader.build()
                 .addClass(TestClass.class)
@@ -168,6 +173,43 @@ public class ModuleClassLoaderTest extends AbstractModuleTestCase {
             .build());
         moduleWithFilteredDoubleExportBuilder.addDependency(DependencySpec.createLocalDependencySpec());
         moduleLoader.addModuleSpec(moduleWithFilteredDoubleExportBuilder.create());
+    }
+
+    @Test
+    public void testDynamicSecurityDisabled() throws Exception {
+        // Given
+        final Module testModule = moduleLoader.loadModule(MODULE_WITH_RESOURCE_ID);
+        final ModuleClassLoader classLoader = testModule.getClassLoader();
+
+        try {
+            // When
+            final Class<?> testClass = classLoader.loadClass("org.jboss.modules.test.TestClass");
+            final ProtectionDomain protectionDomain = testClass.getProtectionDomain();
+            // Then
+            assertTrue(protectionDomain instanceof ModularProtectionDomain);
+            assertTrue(!((ModularProtectionDomain) protectionDomain).isDynamic());
+        } catch (ClassNotFoundException e) {
+            fail("Should have loaded local class");
+        }
+    }
+
+
+    @Test
+    public void testDynamicSecurityModuleEnabled() throws Exception {
+        // Given
+        final Module testModule = moduleLoader.loadModule(MODULE_WITH_CONTENT_ID);
+        final ModuleClassLoader classLoader = testModule.getClassLoader();
+
+        try {
+            // When
+            final Class<?> testClass = classLoader.loadClass("org.jboss.modules.test.TestClass");
+            final ProtectionDomain protectionDomain = testClass.getProtectionDomain();
+            // Then
+            assertTrue(protectionDomain instanceof ModularProtectionDomain);
+            assertTrue(((ModularProtectionDomain) protectionDomain).isDynamic());
+        } catch (ClassNotFoundException e) {
+            fail("Should have loaded local class");
+        }
     }
 
     @Test

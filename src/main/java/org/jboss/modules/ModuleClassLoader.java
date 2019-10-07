@@ -20,6 +20,7 @@ package org.jboss.modules;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.security.AccessController;
 import java.security.PermissionCollection;
 import java.security.ProtectionDomain;
 import java.util.IdentityHashMap;
@@ -77,9 +78,12 @@ import javax.xml.xpath.XPathFactory;
 public class ModuleClassLoader extends ConcurrentClassLoader {
 
     private static final Map<String, Class<?>> jaxpClassesByName;
+    private static final String MODULES_DYNAMIC_SECURITY_PROPERTY = "jboss.modules.dynamic.security";
+    private static final String defaultDynamicSecurity;
     static final Map<String, URLConnectionResource> jaxpImplResources;
 
     static {
+        defaultDynamicSecurity = AccessController.doPrivileged(new PropertyReadAction(MODULES_DYNAMIC_SECURITY_PROPERTY, "false"));
         boolean parallelOk = true;
         try {
             parallelOk = ClassLoader.registerAsParallelCapable();
@@ -167,6 +171,10 @@ public class ModuleClassLoader extends ConcurrentClassLoader {
             setDefaultAssertionStatus(setting == AssertionSetting.ENABLED);
         }
         transformer = configuration.getTransformer();
+    }
+
+    public static boolean isDefaultDynamicSecurity() {
+        return Boolean.valueOf(defaultDynamicSecurity);
     }
 
     /**
@@ -442,7 +450,8 @@ public class ModuleClassLoader extends ConcurrentClassLoader {
             ProtectionDomain protectionDomain = map.get(codeSource);
             if (protectionDomain == null) {
                 final PermissionCollection permissions = module.getPermissionCollection();
-                protectionDomain = new ModularProtectionDomain(codeSource, permissions, this);
+                final boolean isDynamic = Boolean.valueOf(module.getProperty(MODULES_DYNAMIC_SECURITY_PROPERTY, defaultDynamicSecurity));
+                protectionDomain = new ModularProtectionDomain(codeSource, permissions, this, isDynamic);
                 map.put(codeSource, protectionDomain);
             }
             return protectionDomain;

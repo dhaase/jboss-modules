@@ -22,6 +22,7 @@ import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.ProtectionDomain;
+import java.security.Policy;
 
 import org.jboss.modules.ModuleClassLoader;
 
@@ -68,6 +69,27 @@ public class ModularProtectionDomain extends ProtectionDomain {
      */
     public boolean implies(final Permission permission) {
         return dynamic ? super.implies(permission) : getPermissions().implies(permission);
+    }
+
+    /**
+     * Indicates whether the binding of permissions is deferred
+     * (also known as dynamic policy) or not.
+     * <p>
+     * Default value is {@code false} which means that the
+     * {@link ModuleClassLoader} statically binds the permissions
+     * to this {@code ProtectionDomain}.
+     * <p>
+     * The {@code jboss.modules.dynamic.security} property
+     * controls whether the {@code ModuleClassLoader} creates
+     * ProtectionDomains that enable dynamic access control or not.
+     * This property can either be defined as a system or module property.
+     *
+     * @return {@code true} if the {@link Policy} is being consulted
+     * dynamically or {@code false} if the access control solely
+     * based on the assigned Permissions of this {@code ProtectionDomain}.
+     */
+    public boolean isDynamic() {
+        return dynamic;
     }
 
     /**
