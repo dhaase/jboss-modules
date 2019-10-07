@@ -20,9 +20,7 @@ package org.jboss.modules;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PermissionCollection;
-import java.security.ProtectionDomain;
+import java.security.*;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -45,7 +43,6 @@ import org.jboss.modules.security.ModularProtectionDomain;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -173,6 +170,23 @@ public class ModuleClassLoader extends ConcurrentClassLoader {
         transformer = configuration.getTransformer();
     }
 
+    /**
+     * Indicates the default value whether the binding of permissions
+     * is deferred (also known as dynamic policy) or not.
+     * <p>
+     * Default value is {@code false} which means that the
+     * {@link ModuleClassLoader} statically binds the permissions
+     * to this {@code ProtectionDomain}.
+     * <p>
+     * The {@code jboss.modules.dynamic.security} property
+     * controls whether the {@code ModuleClassLoader} creates
+     * ProtectionDomains that enable dynamic access control or not.
+     * This property can be defined as a system and a module property.
+     *
+     * @return {@code true} if the {@link Policy} is being consulted
+     * dynamically or {@code false} if the access control solely
+     * based on the assigned Permissions of this {@code ProtectionDomain}.
+     */
     public static boolean isDefaultDynamicSecurity() {
         return Boolean.valueOf(defaultDynamicSecurity);
     }

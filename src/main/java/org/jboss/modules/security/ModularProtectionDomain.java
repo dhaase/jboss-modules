@@ -75,18 +75,19 @@ public class ModularProtectionDomain extends ProtectionDomain {
      * Indicates whether the binding of permissions is deferred
      * (also known as dynamic policy) or not.
      * <p>
-     * Default value is {@code false} which means that the
-     * {@link ModuleClassLoader} statically binds the permissions
-     * to this {@code ProtectionDomain}.
+     * {@code false} means the {@link ModuleClassLoader} statically
+     * binds the permissions to this {@code ProtectionDomain}.
      * <p>
      * The {@code jboss.modules.dynamic.security} property
      * controls whether the {@code ModuleClassLoader} creates
      * ProtectionDomains that enable dynamic access control or not.
-     * This property can either be defined as a system or module property.
+     * This property can be defined as a system and a module property.
      *
      * @return {@code true} if the {@link Policy} is being consulted
      * dynamically or {@code false} if the access control solely
      * based on the assigned Permissions of this {@code ProtectionDomain}.
+     *
+     * @see ModuleClassLoader#isDefaultDynamicSecurity()
      */
     public boolean isDynamic() {
         return dynamic;
